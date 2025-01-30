@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "496238369954",
+    "project_id": "contacts-e7fff",
+    "storage_bucket": "contacts-e7fff.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:496238369954:android:000cdef22d6e516e0d8bfb",
+        "android_client_info": {
+          "package_name": "com.hari.management"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "496238369954-l2cmf33erqc24n7knm3ad3b0gbrvui1u.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hari.management",
+            "certificate_hash": "43171386a472205d398d28330eb50b51d930421b"
+          }
+        },
+        {
+          "client_id": "496238369954-mu1ufsseb8rf8q7rjbna70sitruit0uj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFHxlCaVLcMfUnEVOmDI74s14-R9x1eSg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "496238369954-mu1ufsseb8rf8q7rjbna70sitruit0uj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+} 

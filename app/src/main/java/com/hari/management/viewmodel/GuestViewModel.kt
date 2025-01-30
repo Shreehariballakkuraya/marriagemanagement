@@ -10,20 +10,36 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import com.hari.management.data.InvitationStatus
+import com.hari.management.util.ReminderWorker
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class GuestViewModel(application: Application) : AndroidViewModel(application) {
     private val repository: GuestRepository
-    val allGuests: Flow<List<GuestEntity>>
+    private val _guests = MutableStateFlow<List<GuestEntity>>(emptyList())
+    val guests = _guests.asStateFlow()
     val categories: Flow<List<GuestCategory>>
-    val interactedGuests: LiveData<List<GuestEntity>>
+    
+    // Change LiveData to StateFlow
+    private val _interactedGuests = MutableStateFlow<List<GuestEntity>>(emptyList())
+    val interactedGuests = _interactedGuests.asStateFlow()
 
     init {
         val guestDao = GuestDatabase.getDatabase(application).guestDao()
         repository = GuestRepository(guestDao)
-        allGuests = repository.allGuests
         categories = repository.getAllCategories()
-        interactedGuests = repository.getInteractedGuests().asLiveData()
+        
+        // Update the collection of interacted guests
+        viewModelScope.launch {
+            repository.getInteractedGuests().collect {
+                _interactedGuests.value = it
+            }
+        }
+        
+        viewModelScope.launch {
+            repository.getAllGuests().collect {
+                _guests.value = it
+            }
+        }
     }
 
     // UI State
@@ -40,7 +56,7 @@ class GuestViewModel(application: Application) : AndroidViewModel(application) {
     val selectedCategory = _selectedCategory.asStateFlow()
     
     // Guest list with search functionality
-    val guests = combine(
+    val guestsFiltered = combine(
         _searchQuery,
         _selectedStatus,
         _selectedCategory
@@ -84,9 +100,22 @@ class GuestViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     
-    fun updateGuestReminder(guestId: Int, reminderDate: Long) {
+    fun updateGuestReminder(guestId: Int, reminderDate: Long?) {
         viewModelScope.launch {
+            val guest = getGuestById(guestId) ?: return@launch
             repository.updateGuestReminder(guestId, reminderDate)
+            
+            // Handle notification scheduling
+            if (reminderDate != null) {
+                ReminderWorker.scheduleReminder(
+                    getApplication(),
+                    guestId,
+                    guest.name,
+                    reminderDate
+                )
+            } else {
+                ReminderWorker.cancelReminder(getApplication(), guestId)
+            }
         }
     }
     
@@ -95,7 +124,7 @@ class GuestViewModel(application: Application) : AndroidViewModel(application) {
             repository.updateGuestStatus(guestId, status)
         }
     }
-
+    
     fun updateGuestInteraction(guestId: Int, hasInteracted: Boolean) {
         viewModelScope.launch {
             repository.updateGuestInteraction(guestId, hasInteracted)
@@ -145,6 +174,12 @@ class GuestViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setCategoryFilter(category: GuestCategory?) {
         _selectedCategory.value = category
+    }
+
+    fun insertGuest(guest: GuestEntity) {
+        viewModelScope.launch {
+            repository.insertGuest(guest)
+        }
     }
 }
 

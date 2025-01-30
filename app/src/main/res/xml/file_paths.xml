@@ -1,4 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <files-path name="pdfs" path="pdfs/"/>
+    <files-path
+        name="files"
+        path="." />
+    <files-path
+        name="images"
+        path="images/" />
+    <files-path
+        name="pdfs"
+        path="pdfs/" />
+    <files-path name="guest_files" path="." />
+    <files-path
+        name="excel"
+        path="excel/" />
 </paths> 

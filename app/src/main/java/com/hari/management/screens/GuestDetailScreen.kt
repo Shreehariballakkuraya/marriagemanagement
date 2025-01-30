@@ -78,18 +78,6 @@ fun GuestDetailScreen(
                         
                         Spacer(modifier = Modifier.height(16.dp))
                         
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Checkbox(
-                                checked = currentGuest.isInvitationVerified,
-                                onCheckedChange = { isVerified ->
-                                    viewModel.updateGuestVerification(guestId, isVerified)
-                                }
-                            )
-                            Text("Invitation Verified")
-                        }
-
                         Spacer(modifier = Modifier.height(16.dp))
 
                         Button(

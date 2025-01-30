@@ -11,8 +11,23 @@ import java.io.File
 import com.hari.management.data.GuestDatabase
 
 object WhatsAppHelper {
+    private fun getMessageTemplate(context: Context): String {
+        return context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+            .getString("message_template", 
+                """Dear {name},
+
+You are cordially invited to our wedding celebration.
+
+We would be honored by your presence.
+
+Please confirm your attendance.
+
+Best regards."""
+            ) ?: ""
+    }
+
     fun sendInvitation(context: Context, phoneNumber: String, guestName: String) {
-        if (!PdfHelper.hasPdfTemplate(context)) {
+        if (!PdfHelper.hasPdfTemplate(context) && !ImageHelper.hasImageTemplate(context)) {
             Toast.makeText(context, "Please add an invitation template first", Toast.LENGTH_LONG).show()
             return
         }
@@ -23,78 +38,110 @@ object WhatsAppHelper {
                 if (it.length == 10) "91$it" else it
             }
 
-            // Create the message
-            val message = """Dear $guestName,
+            // Get and format the message template
+            val messageTemplate = getMessageTemplate(context)
+            val message = messageTemplate.replace("{name}", guestName)
 
-You are cordially invited to our wedding celebration.
-
-We would be honored by your presence.
-
-Please confirm your attendance.
-
-Best regards."""
-
-            // Verify PDF exists and is readable
+            // Check if a PDF template exists
             val pdfFile = PdfHelper.getPdfFile(context)
-            if (!verifyPdfFile(pdfFile)) {
-                Toast.makeText(context, "Error: PDF file not accessible", Toast.LENGTH_LONG).show()
+            if (pdfFile.exists() && pdfFile.canRead() && pdfFile.length() > 0) {
+                sendPdf(context, pdfFile, formattedNumber, message)
                 return
             }
 
-            val pdfUri = FileProvider.getUriForFile(
-                context,
-                "${context.packageName}.fileprovider",
-                pdfFile
-            )
-
-            // First, send the message
-            val messageIntent = Intent(Intent.ACTION_VIEW).apply {
-                data = Uri.parse("https://api.whatsapp.com/send?phone=$formattedNumber&text=${Uri.encode(message)}")
-                setPackage("com.whatsapp")
+            // Check if an image template exists
+            val imageFile = ImageHelper.getImageFile(context)
+            if (imageFile.exists() && imageFile.canRead() && imageFile.length() > 0) {
+                sendImage(context, imageFile, formattedNumber, message)
+                return
             }
 
-            try {
-                context.startActivity(messageIntent)
-            } catch (e: Exception) {
-                Toast.makeText(context, "Error opening WhatsApp for message", Toast.LENGTH_LONG).show()
-                e.printStackTrace()
-            }
-
-            // Use a Handler to delay sending the PDF
-            Handler(Looper.getMainLooper()).postDelayed({
-                // Then, send the PDF with the message as a caption
-                val pdfIntent = Intent(Intent.ACTION_SEND).apply {
-                    type = "application/pdf"
-                    setPackage("com.whatsapp")
-                    putExtra(Intent.EXTRA_STREAM, pdfUri)
-                    putExtra(Intent.EXTRA_TEXT, message) // Include the message as a caption
-                    putExtra("jid", "$formattedNumber@s.whatsapp.net")
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-
-                try {
-                    context.startActivity(pdfIntent)
-                } catch (e: Exception) {
-                    Toast.makeText(context, "Error sending PDF", Toast.LENGTH_LONG).show()
-                    e.printStackTrace()
-                }
-
-                val guestId = "some_guest_id" // Replace with the actual guest ID
-                val database = GuestDatabase.getDatabase(context)
-                database.updateInvitationStatus(guestId, "Confirmed") // Update status to "Confirmed"
-            }, 2000) // Delay for 2 seconds
+            Toast.makeText(context, "Error: No valid template found", Toast.LENGTH_LONG).show()
 
         } catch (e: Exception) {
-            Toast.makeText(
-                context,
-                "Error: ${e.message}",
-                Toast.LENGTH_SHORT
-            ).show()
+            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             e.printStackTrace()
         }
     }
 
-    private fun verifyPdfFile(file: File): Boolean {
-        return file.exists() && file.canRead() && file.length() > 0
+    private fun sendPdf(context: Context, pdfFile: File, formattedNumber: String, message: String) {
+        val pdfUri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            pdfFile
+        )
+
+        val pdfIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "application/pdf"
+            setPackage("com.whatsapp")
+            putExtra(Intent.EXTRA_STREAM, pdfUri)
+            putExtra(Intent.EXTRA_TEXT, message) // Include the message as a caption
+            putExtra("jid", "$formattedNumber@s.whatsapp.net")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        try {
+            context.startActivity(pdfIntent)
+        } catch (e: Exception) {
+            Toast.makeText(context, "Error sending PDF", Toast.LENGTH_LONG).show()
+            e.printStackTrace()
+        }
+
+        val guestId = "some_guest_id" // Replace with the actual guest ID
+        val database = GuestDatabase.getDatabase(context)
+        database.updateInvitationStatus(guestId, "Confirmed") // Update status to "Confirmed"
     }
-} 
+
+    private fun sendImage(context: Context, imageFile: File, formattedNumber: String, message: String) {
+        if (!imageFile.exists() || !imageFile.canRead()) {
+            Toast.makeText(context, "Error: Image file not accessible", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        val imageUri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            imageFile
+        )
+
+        val imageIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "image/*"
+            setPackage("com.whatsapp")
+            putExtra(Intent.EXTRA_STREAM, imageUri)
+            putExtra(Intent.EXTRA_TEXT, message)
+            putExtra("jid", "$formattedNumber@s.whatsapp.net")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        try {
+            context.startActivity(imageIntent)
+        } catch (e: Exception) {
+            Toast.makeText(context, "Error sending image", Toast.LENGTH_LONG).show()
+            e.printStackTrace()
+        }
+
+        val guestId = "some_guest_id" // Replace with the actual guest ID
+        val database = GuestDatabase.getDatabase(context)
+        database.updateInvitationStatus(guestId, "Confirmed") // Update status to "Confirmed"
+    }
+
+    fun sendWhatsAppMessage(context: Context, phoneNumber: String, message: String) {
+        try {
+            val formattedNumber = if (phoneNumber.startsWith("+")) {
+                phoneNumber.substring(1)
+            } else {
+                phoneNumber
+            }
+            
+            val uri = Uri.parse(
+                "https://api.whatsapp.com/send?phone=$formattedNumber&text=${Uri.encode(message)}"
+            )
+            val intent = Intent(Intent.ACTION_VIEW, uri)
+            intent.setPackage("com.whatsapp")
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            throw e
+        }
+    }
+}

@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.ksp)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -46,6 +47,15 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "/META-INF/DEPENDENCIES"
+            excludes += "/META-INF/LICENSE"
+            excludes += "/META-INF/LICENSE.txt"
+            excludes += "/META-INF/NOTICE"
+            excludes += "/META-INF/NOTICE.txt"
+            excludes += "/META-INF/INDEX.LIST"
+            excludes += "/META-INF/ASL2.0"
+            excludes += "/META-INF/LICENSE.md"
+            excludes += "/META-INF/NOTICE.md"
         }
     }
 }
@@ -63,7 +73,13 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.core)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.navigation.compose)
-
+    implementation(libs.play.services.auth)
+    implementation(libs.google.api.client.android)
+    implementation(libs.google.api.services.people) {
+        exclude(group = "org.apache.httpcomponents")
+        exclude(module = "httpclient")
+        exclude(module = "httpcore")
+    }
     // Room dependencies
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
@@ -75,5 +91,19 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
 
     // Material Design
-    implementation("com.google.android.material:material:1.11.0")
+    implementation(libs.material)
+
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
+    implementation(libs.play.services.auth.v2070)
+    implementation(libs.firebase.auth.ktx)
+
+    implementation(libs.androidx.work.runtime.ktx)
+
+    implementation(libs.jxl)
+
+    implementation(libs.android.mail)
+    implementation(libs.mail.android.activation)
+
+    implementation(libs.androidx.security.crypto)
 } 

@@ -1,6 +1,12 @@
 [versions]
 agp = "8.8.0"
+androidActivation = "1.6.7"
+androidMail = "1.6.7"
 coreKtxVersion = "1.12.0"
+firebaseBom = "32.8.0"
+googleApiClientAndroid = "1.32.1"
+googleApiServicesPeople = "v1-rev20220301-1.32.1"
+jxl = "2.6.12"
 kotlin = "1.9.0"
 ksp = "1.9.0-1.0.13"
 coreKtx = "1.15.0"
@@ -9,20 +15,34 @@ junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 appcompat = "1.7.0"
 material = "1.11.0"
+playServicesAuth = "20.0.1"
+playServicesAuthVersion = "20.7.0"
 room = "2.6.1"
 lifecycle = "2.7.0"
 compose-bom = "2024.02.00"
 compose-material3 = "1.2.1"
 navigation = "2.7.7"
 gamesActivity = "3.0.5"
+securityCrypto = "1.1.0-alpha06"
+workRuntimeKtx = "2.9.0"
 
 [libraries]
+android-mail = { module = "com.sun.mail:android-mail", version.ref = "androidMail" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-ktx-v1120 = { module = "androidx.core:core-ktx", version.ref = "coreKtxVersion" }
+androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "securityCrypto" }
+androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
+firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
+firebase-auth-ktx = { module = "com.google.firebase:firebase-auth-ktx" }
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+google-api-client-android = { module = "com.google.api-client:google-api-client-android", version.ref = "googleApiClientAndroid" }
+google-api-services-people = { module = "com.google.apis:google-api-services-people", version.ref = "googleApiServicesPeople" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+jxl = { module = "net.sourceforge.jexcelapi:jxl", version.ref = "jxl" }
+mail-android-activation = { module = "com.sun.mail:android-activation", version.ref = "androidActivation" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
@@ -38,6 +58,8 @@ androidx-compose-material-icons-core = { module = "androidx.compose.material:mat
 androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
 androidx-games-activity = { group = "androidx.games", name = "games-activity", version.ref = "gamesActivity" }
+play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
+play-services-auth-v2070 = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuthVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

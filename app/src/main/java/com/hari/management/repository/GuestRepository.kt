@@ -7,7 +7,7 @@ import com.hari.management.data.InvitationStatus
 import kotlinx.coroutines.flow.Flow
 
 class GuestRepository(private val guestDao: GuestDao) {
-    val allGuests: Flow<List<GuestEntity>> = guestDao.getAllGuests()
+    fun getAllGuests(): Flow<List<GuestEntity>> = guestDao.getAllGuests()
 
     fun getAllCategories(): Flow<List<GuestCategory>> = guestDao.getAllCategories()
 
@@ -39,7 +39,7 @@ class GuestRepository(private val guestDao: GuestDao) {
         guestDao.updateGuestVerification(guestId, isVerified)
     }
 
-    suspend fun updateGuestReminder(guestId: Int, reminderDate: Long) {
+    suspend fun updateGuestReminder(guestId: Int, reminderDate: Long?) {
         guestDao.updateGuestReminder(guestId, reminderDate)
     }
 
@@ -73,5 +73,9 @@ class GuestRepository(private val guestDao: GuestDao) {
 
     fun getInteractedGuests(): Flow<List<GuestEntity>> {
         return guestDao.getInteractedGuests()
+    }
+
+    suspend fun insertGuest(guest: GuestEntity) {
+        guestDao.insertGuest(guest)
     }
 } 

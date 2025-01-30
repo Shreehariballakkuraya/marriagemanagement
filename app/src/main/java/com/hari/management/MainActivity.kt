@@ -46,6 +46,11 @@ import androidx.navigation.NavController
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.CenterAlignedTopAppBar
 import com.hari.management.navigation.NavigationGraph
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.TextButton
+import com.hari.management.util.Scheduler
 
 class MainActivity : ComponentActivity() {
     private val viewModel: GuestViewModel by viewModels {
@@ -79,33 +84,37 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+        Scheduler.scheduleDailyExport(this)
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DatePickerDialog(
     onDismiss: () -> Unit,
     onDateSelected: (Long) -> Unit
 ) {
-    val calendar = remember { Calendar.getInstance() }
+    val datePickerState = rememberDatePickerState()
     
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface
-        ) {
-            AndroidView(
-                factory = { context ->
-                    DatePicker(context).apply {
-                        setOnDateChangedListener { _, year, month, day ->
-                            calendar.set(year, month, day)
-                            onDateSelected(calendar.timeInMillis)
-                        }
-                    }
-                },
-                modifier = Modifier.padding(16.dp)
-            )
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                datePickerState.selectedDateMillis?.let { onDateSelected(it) }
+                onDismiss()
+            }) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
         }
+    ) {
+        DatePicker(
+            state = datePickerState
+        )
     }
 }
 
