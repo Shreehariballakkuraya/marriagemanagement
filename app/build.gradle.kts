@@ -84,26 +84,19 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
-
     // Testing dependencies
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-
     // Material Design
     implementation(libs.material)
-
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.play.services.auth.v2070)
     implementation(libs.firebase.auth.ktx)
-
     implementation(libs.androidx.work.runtime.ktx)
-
     implementation(libs.jxl)
-
     implementation(libs.android.mail)
     implementation(libs.mail.android.activation)
-
     implementation(libs.androidx.security.crypto)
 } 
