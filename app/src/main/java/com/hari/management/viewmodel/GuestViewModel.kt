@@ -18,7 +18,7 @@ class GuestViewModel(application: Application) : AndroidViewModel(application) {
     private val _guests = MutableStateFlow<List<GuestEntity>>(emptyList())
     val guests = _guests.asStateFlow()
     val categories: Flow<List<GuestCategory>>
-    
+
     // Change LiveData to StateFlow
     private val _interactedGuests = MutableStateFlow<List<GuestEntity>>(emptyList())
     val interactedGuests = _interactedGuests.asStateFlow()
@@ -27,14 +27,14 @@ class GuestViewModel(application: Application) : AndroidViewModel(application) {
         val guestDao = GuestDatabase.getDatabase(application).guestDao()
         repository = GuestRepository(guestDao)
         categories = repository.getAllCategories()
-        
+
         // Update the collection of interacted guests
         viewModelScope.launch {
             repository.getInteractedGuests().collect {
                 _interactedGuests.value = it
             }
         }
-        
+
         viewModelScope.launch {
             repository.getAllGuests().collect {
                 _guests.value = it
@@ -45,29 +45,34 @@ class GuestViewModel(application: Application) : AndroidViewModel(application) {
     // UI State
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
-    
+
     private val _showDatePicker = MutableStateFlow<Int?>(null)
     val showDatePicker = _showDatePicker.asStateFlow()
-    
+
     private val _selectedStatus = MutableStateFlow<InvitationStatus?>(null)
     val selectedStatus = _selectedStatus.asStateFlow()
 
     private val _selectedCategory = MutableStateFlow<GuestCategory?>(null)
     val selectedCategory = _selectedCategory.asStateFlow()
-    
-    // Guest list with search functionality
+
+    // Guest list with search functionality and filters
     val guestsFiltered = combine(
+        _guests,
         _searchQuery,
         _selectedStatus,
         _selectedCategory
-    ) { query, status, category ->
-        repository.getFilteredGuests(
-            query = if (query.isEmpty()) null else query,
-            status = status,
-            categoryId = category?.id
-        )
-    }.flatMapLatest { it }.asLiveData()
-    
+    ) { guests, query, status, category ->
+        guests.filter { guest ->
+            (query.isEmpty() || guest.name.contains(query, ignoreCase = true)) &&
+                    (status == null || guest.invitationStatus == status) &&
+                    (category == null || guest.categoryId == category.id)
+        }
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        emptyList()
+    )
+
     // Create operations
     fun addGuest(name: String, phoneNumber: String, categoryId: Int? = null) = viewModelScope.launch {
         val guest = GuestEntity(
@@ -77,34 +82,34 @@ class GuestViewModel(application: Application) : AndroidViewModel(application) {
         )
         repository.insert(guest)
     }
-    
+
     // Read operations
     fun searchGuests(query: String) {
         _searchQuery.value = query
     }
-    
+
     suspend fun getGuestById(id: Int): GuestEntity? {
         return repository.getGuestById(id)
     }
-    
+
     // Update operations
     fun updateGuest(guest: GuestEntity) {
         viewModelScope.launch {
             repository.updateGuest(guest)
         }
     }
-    
+
     fun updateGuestVerification(guestId: Int, isVerified: Boolean) {
         viewModelScope.launch {
             repository.updateGuestVerification(guestId, isVerified)
         }
     }
-    
+
     fun updateGuestReminder(guestId: Int, reminderDate: Long?) {
         viewModelScope.launch {
             val guest = getGuestById(guestId) ?: return@launch
             repository.updateGuestReminder(guestId, reminderDate)
-            
+
             // Handle notification scheduling
             if (reminderDate != null) {
                 ReminderWorker.scheduleReminder(
@@ -118,48 +123,48 @@ class GuestViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
-    
+
     fun updateGuestStatus(guestId: Int, status: InvitationStatus) {
         viewModelScope.launch {
             repository.updateGuestStatus(guestId, status)
         }
     }
-    
+
     fun updateGuestInteraction(guestId: Int, hasInteracted: Boolean) {
         viewModelScope.launch {
             repository.updateGuestInteraction(guestId, hasInteracted)
         }
     }
-    
+
     // Delete operations
     fun deleteGuest(guest: GuestEntity) {
         viewModelScope.launch {
             repository.deleteGuest(guest)
         }
     }
-    
+
     fun deleteGuestById(guestId: Int) {
         viewModelScope.launch {
             repository.deleteGuestById(guestId)
         }
     }
-    
+
     fun deleteAllGuests() {
         viewModelScope.launch {
             repository.deleteAllGuests()
         }
     }
-    
+
     // Date picker handling
     fun showDatePickerFor(guestId: Int) {
         _showDatePicker.value = guestId
     }
-    
+
     fun hideDatePicker() {
         _showDatePicker.value = null
     }
 
-    // Add these functions for category management
+    // Category management
     fun addCategory(category: GuestCategory) = viewModelScope.launch {
         repository.insertCategory(category)
     }
@@ -168,6 +173,7 @@ class GuestViewModel(application: Application) : AndroidViewModel(application) {
         repository.deleteCategory(category)
     }
 
+    // Set filters
     fun setStatusFilter(status: InvitationStatus?) {
         _selectedStatus.value = status
     }
@@ -176,13 +182,13 @@ class GuestViewModel(application: Application) : AndroidViewModel(application) {
         _selectedCategory.value = category
     }
 
+    // Insert guest directly
     fun insertGuest(guest: GuestEntity) {
         viewModelScope.launch {
             repository.insertGuest(guest)
         }
     }
 }
-
 class GuestViewModelFactory(private val application: Application) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(GuestViewModel::class.java)) {
@@ -191,4 +197,4 @@ class GuestViewModelFactory(private val application: Application) : ViewModelPro
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
-} 
+}

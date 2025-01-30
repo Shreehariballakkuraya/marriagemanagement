@@ -55,6 +55,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.runtime.collectAsState
+import com.hari.management.data.GuestCategory
 
 enum class ViewType {
     LIST, GRID
@@ -127,13 +128,13 @@ fun GuestListScreen(
                         Icon(Icons.Default.Group, "Bulk Operations")
                     }
                     IconButton(
-                        onClick = { 
-                            viewType = if (viewType == ViewType.LIST) ViewType.GRID else ViewType.LIST 
+                        onClick = {
+                            viewType = if (viewType == ViewType.LIST) ViewType.GRID else ViewType.LIST
                         }
                     ) {
                         Icon(
-                            if (viewType == ViewType.LIST) 
-                                Icons.Default.GridView 
+                            if (viewType == ViewType.LIST)
+                                Icons.Default.GridView
                             else Icons.AutoMirrored.Filled.ViewList,
                             "Toggle View"
                         )
@@ -151,12 +152,14 @@ fun GuestListScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Column(modifier = Modifier.padding(paddingValues)) {
+            // Add Status and Category Filters Here
+
             AdvancedSearch(
                 viewModel = viewModel,
                 categories = categories,
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
-            
+
             GuestListContent(
                 viewModel = viewModel,
                 onGuestClick = { guestId ->
@@ -233,7 +236,6 @@ fun GuestListScreen(
         }
     }
 }
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun GuestListContent(
@@ -245,7 +247,7 @@ fun GuestListContent(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val guests by viewModel.guests.collectAsState(initial = emptyList())
+    val guests by viewModel.guestsFiltered.collectAsState(initial = emptyList())
     val interactedGuests by viewModel.interactedGuests.collectAsState()
     var showStatusUpdateDialog by remember { mutableStateOf(false) }
     var currentGuestToUpdate by remember { mutableStateOf<GuestEntity?>(null) }
@@ -316,46 +318,14 @@ fun GuestListContent(
                     contentPadding = PaddingValues(8.dp)
                 ) {
                     items(guests, key = { it.id }) { guest ->
-                        GuestItem(
+                        GuestGridItem(
                             guest = guest,
-                            onVerificationChanged = { isVerified ->
-                                viewModel.updateGuestVerification(guest.id, isVerified)
-                            },
-                            onReminderClick = {
-                                viewModel.showDatePickerFor(guest.id)
-                            },
-                            onDeleteClick = {
-                                viewModel.deleteGuest(guest)
-                            },
-                            onStatusClick = { status ->
-                                viewModel.updateGuestStatus(guest.id, status)
-                            },
-                            onClick = {
-                                onGuestClick(guest.id)
-                            },
-                            onCallClick = { phoneNumber ->
-                                val intent = Intent(Intent.ACTION_DIAL).apply {
-                                    data = Uri.parse("tel:$phoneNumber")
-                                }
-                                context.startActivity(intent)
-                            },
-                            onWhatsAppClick = { phoneNumber, name ->
-                                WhatsAppHelper.sendInvitation(context, phoneNumber, name)
-                                viewModel.updateGuestInteraction(guest.id, true)
-                            },
+                            onGuestClick = { onGuestClick(guest.id) },
+                            onGuestLongClick = { onGuestLongClick(guest) },
+                            isSelected = selectedGuests.contains(guest),
                             viewModel = viewModel,
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                                .background(
-                                    if (selectedGuests.contains(guest)) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                                    else Color.Transparent
-                                )
-                                .pointerInput(Unit) {
-                                    detectTapGestures(
-                                        onLongPress = { onGuestLongClick(guest) }
-                                    )
-                                }
+                                .padding(8.dp)
                         )
                     }
                 }
@@ -497,7 +467,7 @@ fun GuestItem(
 
                     // Reminder button
                     IconButton(
-                        onClick = { 
+                        onClick = {
                             if (guest.reminderDate == null) {
                                 onReminderClick()
                             } else {
@@ -506,10 +476,10 @@ fun GuestItem(
                         }
                     ) {
                         Icon(
-                            if (guest.reminderDate == null) 
-                                Icons.Default.Notifications 
+                            if (guest.reminderDate == null)
+                                Icons.Default.Notifications
                             else Icons.Default.NotificationsOff,
-                            contentDescription = if (guest.reminderDate == null) 
+                            contentDescription = if (guest.reminderDate == null)
                                 "Set Reminder" else "Clear Reminder"
                         )
                     }
@@ -583,7 +553,7 @@ fun GuestGridItem(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .aspectRatio(0.8f)
+            .aspectRatio(0.8f)  // Ensure the aspect ratio fits your design
             .pointerInput(Unit) {
                 detectTapGestures(
                     onTap = { onGuestClick() },
@@ -591,7 +561,7 @@ fun GuestGridItem(
                 )
             },
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) 
+            containerColor = if (isSelected)
                 MaterialTheme.colorScheme.primaryContainer
             else MaterialTheme.colorScheme.surface
         )
@@ -615,9 +585,9 @@ fun GuestGridItem(
                         shape = CircleShape
                     )
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Text(
                 text = guest.name,
                 style = MaterialTheme.typography.titleMedium,
@@ -625,21 +595,21 @@ fun GuestGridItem(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
-            
+
             Text(
                 text = guest.phoneNumber,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            
+
             Spacer(modifier = Modifier.weight(1f))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 IconButton(
-                    onClick = { 
+                    onClick = {
                         val intent = Intent(Intent.ACTION_DIAL).apply {
                             data = Uri.parse("tel:${guest.phoneNumber}")
                         }
@@ -653,9 +623,9 @@ fun GuestGridItem(
                         modifier = Modifier.size(20.dp)
                     )
                 }
-                
+
                 IconButton(
-                    onClick = { 
+                    onClick = {
                         WhatsAppHelper.sendInvitation(context, guest.phoneNumber, guest.name)
                         viewModel.updateGuestInteraction(guest.id, true)
                     },
@@ -670,4 +640,4 @@ fun GuestGridItem(
             }
         }
     }
-} 
+}
