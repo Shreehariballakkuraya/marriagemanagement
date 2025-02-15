@@ -9,13 +9,14 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.room.TypeConverters
 
 @Database(
-    entities = [GuestEntity::class, GuestCategory::class],
-    version = 5,
+    entities = [GuestEntity::class, GuestCategory::class, NotificationSchedule::class],
+    version = 6,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class GuestDatabase : RoomDatabase() {
     abstract fun guestDao(): GuestDao
+    abstract fun notificationScheduleDao(): NotificationScheduleDao
     
     companion object {
         @Volatile
@@ -28,7 +29,13 @@ abstract class GuestDatabase : RoomDatabase() {
                     GuestDatabase::class.java,
                     "guest_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                    .addMigrations(
+                        MIGRATION_1_2, 
+                        MIGRATION_2_3, 
+                        MIGRATION_3_4, 
+                        MIGRATION_4_5,
+                        MIGRATION_5_6
+                    )
                     .build()
                 INSTANCE = instance
                 instance
@@ -144,6 +151,25 @@ abstract class GuestDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // Add hasInteracted column to guests table
                 db.execSQL("ALTER TABLE guests ADD COLUMN hasInteracted INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS notification_schedules (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        title TEXT NOT NULL,
+                        message TEXT NOT NULL,
+                        scheduledTime TEXT NOT NULL,
+                        guestId INTEGER,
+                        isRepeating INTEGER NOT NULL DEFAULT 0,
+                        repeatInterval INTEGER,
+                        notificationType TEXT NOT NULL,
+                        isEnabled INTEGER NOT NULL DEFAULT 1,
+                        FOREIGN KEY(guestId) REFERENCES guests(id) ON DELETE CASCADE
+                    )
+                """)
             }
         }
     }
